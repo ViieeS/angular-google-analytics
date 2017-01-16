@@ -1,24 +1,12 @@
 /* globals define */
-(function (root, factory) {
+(function () {
   'use strict';
-  if (typeof module !== 'undefined' && module.exports) {
-    if (typeof angular === 'undefined') {
-      factory(require('angular'));
-    } else {
-      factory(angular);
-    }
-    module.exports = 'angular-google-analytics';
-  } else if (typeof define === 'function' && define.amd) {
-    define(['angular'], factory);
-  } else {
-    factory(root.angular);
-  }
-}(this, function (angular, undefined) {
-  'use strict';
+
   angular.module('angular-google-analytics', [])
     .provider('Analytics', function () {
       var accounts,
           analyticsJS = true,
+          cookieConfig = 'auto', // DEPRECATED
           created = false,
           crossDomainLinker = false,
           crossLinkDomains,
@@ -112,6 +100,12 @@
         return this;
       };
 
+      /* DEPRECATED */
+      this.setCookieConfig = function (config) {
+        cookieConfig = config;
+        return this;
+      };
+
       this.useECommerce = function (val, enhanced) {
         ecommerce = !!val;
         enhancedEcommerce = !!enhanced;
@@ -183,7 +177,7 @@
         traceDebuggingMode = !!enableTraceDebugging;
         return this;
       };
-      
+
       // Enable reading page url from route object
       this.readFromRoute = function(val) {
         readFromRoute = !!val;
@@ -193,7 +187,7 @@
       /**
        * Public Service
        */
-      this.$get = ['$document', // To read page title 
+      this.$get = ['$document', // To read page title
                    '$location', //
                    '$log',      //
                    '$rootScope',//
@@ -220,7 +214,7 @@
           }
           return isPropertyDefined('name', config) ? (config.name + '.' + commandName) : commandName;
         };
-        
+
         // Try to read route configuration and log warning if not possible
         var $route = {};
         if (readFromRoute) {
@@ -231,15 +225,15 @@
           }
         }
 
-        // Get url for current page 
+        // Get url for current page
         var getUrl = function () {
           // Using ngRoute provided tracking urls
           if (readFromRoute && $route.current && ('pageTrack' in $route.current)) {
             return $route.current.pageTrack;
           }
-           
+
           // Otherwise go the old way
-          var url = trackUrlParams ? $location.url() : $location.path(); 
+          var url = trackUrlParams ? $location.url() : $location.path();
           return removeRegExp ? url.replace(removeRegExp, '') : url;
         };
 
@@ -407,6 +401,18 @@
           }
         };
 
+        /* DEPRECATED */
+        this._createScriptTag = function () {
+          that._registerScriptTags();
+          that._registerTrackers();
+        };
+
+        /* DEPRECATED */
+        this._createAnalyticsScriptTag = function () {
+          that._registerScriptTags();
+          that._registerTrackers();
+        };
+
         this._registerScriptTags = function () {
           var document = $document[0],
               protocol = _getProtocol(),
@@ -499,9 +505,21 @@
               trackerObj.trackEcommerce = isPropertyDefined('trackEcommerce', trackerObj) ? trackerObj.trackEcommerce : ecommerce;
               trackerObj.trackEvent = isPropertyDefined('trackEvent', trackerObj) ? trackerObj.trackEvent : false;
 
+              // Logic to choose the account fields to be used.
+              // cookieConfig is being deprecated for a tracker specific property: fields.
               var fields = {};
               if (isPropertyDefined('fields', trackerObj)) {
                 fields = trackerObj.fields;
+              } else if (isPropertyDefined('cookieConfig', trackerObj)) {
+                if (angular.isString(trackerObj.cookieConfig)) {
+                  fields.cookieDomain = trackerObj.cookieConfig;
+                } else {
+                  fields = trackerObj.cookieConfig;
+                }
+              } else if (angular.isString(cookieConfig)) {
+                fields.cookieDomain = cookieConfig;
+              } else if (cookieConfig) {
+                fields = cookieConfig;
               }
               if (trackerObj.crossDomainLinker === true) {
                 fields.allowLinker = true;
@@ -1091,7 +1109,7 @@
                 return;
               }
             }
-            
+
             that._trackPage();
           });
         }
@@ -1127,6 +1145,29 @@
             trackUrlParams: trackUrlParams
           },
           getUrl: getUrl,
+          /* DEPRECATED */
+          setCookieConfig: function (config) {
+            that._log('warn', 'DEPRECATION WARNING: setCookieConfig method is deprecated. Please use tracker fields instead.');
+            return that._setCookieConfig.apply(that, arguments);
+          },
+          /* DEPRECATED */
+          getCookieConfig: function () {
+            that._log('warn', 'DEPRECATION WARNING: getCookieConfig method is deprecated. Please use tracker fields instead.');
+            return cookieConfig;
+          },
+          /* DEPRECATED */
+          createAnalyticsScriptTag: function (config) {
+            that._log('warn', 'DEPRECATION WARNING: createAnalyticsScriptTag method is deprecated. Please use registerScriptTags and registerTrackers methods instead.');
+            if (config) {
+              cookieConfig = config;
+            }
+            return that._createAnalyticsScriptTag();
+          },
+          /* DEPRECATED */
+          createScriptTag: function () {
+            that._log('warn', 'DEPRECATION WARNING: createScriptTag method is deprecated. Please use registerScriptTags and registerTrackers methods instead.');
+            return that._createScriptTag();
+          },
           registerScriptTags: function () {
             return that._registerScriptTags();
           },
@@ -1233,5 +1274,5 @@
         }
       };
     }]);
-  return angular.module('angular-google-analytics');
-}));
+
+}());

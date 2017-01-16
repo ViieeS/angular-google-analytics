@@ -1,28 +1,15 @@
 /**
  * Angular Google Analytics - Easy tracking for your AngularJS application
- * @version v1.1.8 - 2016-12-30
+ * @version v1.1.9-browserify-fix - 2017-01-16
  * @link http://github.com/revolunet/angular-google-analytics
  * @author Julien Bouquillon <julien@revolunet.com> (https://github.com/revolunet)
  * @contributors Julien Bouquillon (https://github.com/revolunet),Justin Saunders (https://github.com/justinsa),Chris Esplin (https://github.com/deltaepsilon),Adam Misiorny (https://github.com/adam187)
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
 /* globals define */
-(function (root, factory) {
+(function () {
   'use strict';
-  if (typeof module !== 'undefined' && module.exports) {
-    if (typeof angular === 'undefined') {
-      factory(require('angular'));
-    } else {
-      factory(angular);
-    }
-    module.exports = 'angular-google-analytics';
-  } else if (typeof define === 'function' && define.amd) {
-    define(['angular'], factory);
-  } else {
-    factory(root.angular);
-  }
-}(this, function (angular, undefined) {
-  'use strict';
+
   angular.module('angular-google-analytics', [])
     .provider('Analytics', function () {
       var accounts,
@@ -198,7 +185,7 @@
         traceDebuggingMode = !!enableTraceDebugging;
         return this;
       };
-      
+
       // Enable reading page url from route object
       this.readFromRoute = function(val) {
         readFromRoute = !!val;
@@ -208,7 +195,7 @@
       /**
        * Public Service
        */
-      this.$get = ['$document', // To read page title 
+      this.$get = ['$document', // To read page title
                    '$location', //
                    '$log',      //
                    '$rootScope',//
@@ -235,7 +222,7 @@
           }
           return isPropertyDefined('name', config) ? (config.name + '.' + commandName) : commandName;
         };
-        
+
         // Try to read route configuration and log warning if not possible
         var $route = {};
         if (readFromRoute) {
@@ -246,15 +233,15 @@
           }
         }
 
-        // Get url for current page 
+        // Get url for current page
         var getUrl = function () {
           // Using ngRoute provided tracking urls
           if (readFromRoute && $route.current && ('pageTrack' in $route.current)) {
             return $route.current.pageTrack;
           }
-           
+
           // Otherwise go the old way
-          var url = trackUrlParams ? $location.url() : $location.path(); 
+          var url = trackUrlParams ? $location.url() : $location.path();
           return removeRegExp ? url.replace(removeRegExp, '') : url;
         };
 
@@ -1130,7 +1117,7 @@
                 return;
               }
             }
-            
+
             that._trackPage();
           });
         }
@@ -1295,5 +1282,5 @@
         }
       };
     }]);
-  return angular.module('angular-google-analytics');
-}));
+
+}());
